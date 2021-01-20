@@ -1,10 +1,12 @@
 import express, { Application } from "express";
 import socketIO, { Server as SocketIOServer } from "socket.io";
-import { createServer, Server as HTTPServer } from "http";
+// import { createServer, Server as HTTPServer } from "http";
+import fs from "fs";
+import { createServer, Server as HTTPSServer } from "https";
 import path from "path";
 
 export class Server {
-  private httpServer: HTTPServer;
+  private httpServer: HTTPSServer;
   private app: Application;
   private io: SocketIOServer;
 
@@ -18,7 +20,10 @@ export class Server {
 
   private initialize(): void {
     this.app = express();
-    this.httpServer = createServer(this.app);
+    this.httpServer = createServer({
+      key: fs.readFileSync('server.key'),
+      cert: fs.readFileSync('server.cert')
+    },this.app);
     this.io = socketIO(this.httpServer);
 
     this.configureApp();
@@ -43,6 +48,8 @@ export class Server {
       );
 
       if (!existingSocket) {
+        console.log("Socket connected", socket.id);
+        
         this.activeSockets.push(socket.id);
 
         socket.emit("update-user-list", {
